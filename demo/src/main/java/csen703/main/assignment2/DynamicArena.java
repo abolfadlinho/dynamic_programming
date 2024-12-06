@@ -1,9 +1,13 @@
 package csen703.main.assignment2;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 
 class Pair<P, B> {
     public P profit;
@@ -19,6 +23,130 @@ class Pair<P, B> {
 //[A,B,C] length = 4
 @SuppressWarnings("unused")
 public class DynamicArena {
+
+    static class Data {
+        int entered;
+        Set<Integer> banned;
+        int profit;
+
+        Data(int entered, Set<Integer> banned, int profit) {
+            this.entered = entered;
+            this.banned = banned;
+            this.profit = profit;
+        }
+
+        @Override
+        public String toString() {
+            return "Entered: " + entered + ", Banned: " + banned + ", Profit: " + profit + "\n";
+        }
+    }
+
+    public static int olele(List<Data> dataList) {
+
+        
+        int n = dataList.size();
+        int[] dp = new int[n];
+        dp[0] = dataList.get(0).profit;
+        
+        for (int i = 1; i < n; i++) {
+            Data current = dataList.get(i);
+            int maxProfit = current.profit;
+            
+            for (int j = 0; j < i; j++) {
+                Data prev = dataList.get(j);
+                if (!prev.banned.contains(current.entered)) {
+                    maxProfit = Math.max(maxProfit, dp[j] + current.profit);
+                }
+            }
+            
+            dp[i] = maxProfit;
+        }
+        
+        return Arrays.stream(dp).max().getAsInt();
+    }
+
+    public static int alolo(int[] floors) {
+        List<Data> dataList = new ArrayList<>();
+
+        for (int i = 0; i < floors.length - 1; i++) {
+            for (int j = i + 1; j < floors.length; j++) {
+                Set<Integer> set = new HashSet<>();
+                for (int k = i; k < j+2 && k < floors.length; k++) {
+                    set.add(k);
+                }
+                Data newData = new Data(i,set, floors[j] - floors[i]);
+                dataList.add(newData);
+            }
+        }
+
+        System.out.println(dataList);
+
+        return olele(dataList);
+    }
+
+    public static int yemken(int[] floors) {
+        int[][] dp = new int[floors.length][floors.length];
+        HashMap<String, Set<Integer>> hash = new HashMap<>();
+
+        for (int i = 0; i < dp.length; i++) {
+            for (int j = 0; j < dp[i].length; j++) {
+                dp[i][j] = Integer.MAX_VALUE;
+            }
+        }
+
+        for (int i = 0; i < floors.length - 1; i++) {
+            for (int j = i + 1; j < floors.length; j++) {
+                dp[i][j] = floors[j] - floors[i];
+                Set<Integer> set = new HashSet<>();
+                for (int k = i; k < j+1 && k < floors.length; k++) {
+                    set.add(k);
+                }
+                hash.put(i + " " + j, set);
+                System.out.println("Entered: " + i + ",Banned: " + set + " ,Profit: " + dp[i][j]);
+            }
+        }
+
+        /*
+            dp now looks like this for a 4 floor arena:
+            0 b c d e
+            0 0 g h i
+            0 0 0 j k
+            0 0 0 0 l
+        */
+
+        HashMap<Set<Integer>, Integer> memo = new HashMap<>();
+        return ahh(dp, 0, new HashSet<Integer>(), memo, hash);
+    }
+
+    private static int ahh(int[][] dp, int currentProfit, Set<Integer> banned, HashMap<Set<Integer>, Integer> memo, HashMap<String, Set<Integer>> hash) {
+        if (memo.containsKey(banned)) {
+            return memo.get(banned);
+        }
+
+        int maxProfit = currentProfit;
+
+        for (int i = 0; i < dp.length - 1; i++) {
+
+            if(banned.contains(i)) continue;
+
+            for (int j = i+1; j < dp.length;j++) {
+                if (banned.contains(j)) continue;
+
+                Set<Integer> newBanned = new HashSet<>(banned);
+
+                newBanned.addAll(hash.get(i + " " + j));
+
+                int profitWithCurrent = ahh(dp, currentProfit + dp[i][j], newBanned, memo, hash); //recursion
+
+                maxProfit = (profitWithCurrent > maxProfit)? profitWithCurrent: maxProfit; //if better profit then replace
+            }
+        }
+
+        memo.put(banned, maxProfit);
+
+        return maxProfit;
+    }
+
     public static int ClimbDynamicArenaDP(int [] floors) { //that implements a dynamic programming approach to finding the maximum number of floors that a fighter can climb.        
         // fit array in hashmap for better use of data (this is not memoization meaning not all computed values will be needed)
         HashMap<Integer, Pair<Integer, int[]>> map = new HashMap<>();
@@ -70,6 +198,36 @@ public class DynamicArena {
         }
 
         memo.put(banned, maxProfit); //store result of subproblem
+        return maxProfit;
+    }
+
+    public static int ClimbDynamicArenaDP2(int [] floors) {  
+        HashMap<boolean[], Integer> memo = new HashMap<>();
+        boolean banned[] = new boolean[floors.length];
+        int outcome = findMaxProfit2(floors, 0, banned, memo);
+        return outcome;
+    }
+
+    private static int findMaxProfit2(int[] map, int currentProfit, boolean[] banned, HashMap<boolean[], Integer> memo) {
+        if (memo.containsKey(banned)) {
+            return memo.get(banned);
+        }
+
+        int maxProfit = currentProfit;
+
+        for (int i = 0; i < map.length - 1; i++) {
+            if (banned[i] == true) continue;
+            boolean[] newBanned = banned;
+            newBanned[i] = true; //important for stack overflow
+            if(i+1 < map.length) newBanned[i+1] = true;
+            if(i+2 < map.length) newBanned[i+2] = true;
+
+            int profitWithCurrent = findMaxProfit2(map, currentProfit + (map[i+1] - map[i]), newBanned, memo);
+
+            maxProfit = (profitWithCurrent>maxProfit)?profitWithCurrent:maxProfit;
+        }
+
+        memo.put(banned, maxProfit);
         return maxProfit;
     }
 
