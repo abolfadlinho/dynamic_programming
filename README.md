@@ -83,6 +83,6 @@ public class DynamicArena {
    ```
 
 ## Author
-- **Your Name** Ahmed Abolfadl
+- **Ahmed Abolfadl**
 - **German University in Cairo**
 
